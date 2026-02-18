@@ -3,48 +3,78 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kalkulator LPG</title>
+
+<title>LPG Check</title>
 
 <style>
 body {
-    font-family: -apple-system, Arial;
-    background: #f5f5f5;
     margin: 0;
-    padding: 20px;
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #f2f2f7;
 }
 
 .container {
-    max-width: 420px;
+    max-width: 500px;
     margin: auto;
-    background: white;
-    padding: 20px;
-    border-radius: 14px;
-    box-shadow: 0 5px 20px rgba(0,0,0,0.1);
 }
 
-h1 {
-    text-align: center;
+.header {
+    display: flex;
+    align-items: center;
+    padding: 16px;
+    background: white;
+    border-bottom: 1px solid #ddd;
+}
+
+.header img {
+    width: 36px;
+    height: 36px;
+    margin-right: 10px;
 }
 
 .section {
     margin-top: 20px;
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
 }
 
-label {
+.section-title {
+    padding: 12px 16px;
+    font-size: 13px;
+    color: gray;
+}
+
+.row {
+    padding: 16px;
+    border-top: 1px solid #eee;
+}
+
+.center {
+    text-align: center;
+}
+
+.big {
+    font-size: 22px;
     font-weight: bold;
 }
 
-input, select {
+.blue { color: #007aff; }
+.green { color: #34c759; }
+
+.slider {
+    width: 100%;
+}
+
+select, input {
+    width: 100%;
+    font-size: 16px;
+    padding: 10px;
+}
+
+img.tank {
     width: 100%;
     padding: 10px;
-    margin-top: 6px;
-    font-size: 16px;
-}
-
-.result {
-    font-size: 20px;
-    font-weight: bold;
-    margin-top: 10px;
 }
 </style>
 </head>
@@ -52,69 +82,96 @@ input, select {
 <body>
 
 <div class="container">
-<h1>Gaz Propan</h1>
 
-<div class="section">
-<label>Zbiornik</label>
-<select id="tank">
-<option value="2700">2700 L</option>
-<option value="4850">4850 L</option>
-</select>
-</div>
+    <div class="header">
+        <img src="ikona.png">
+        <h2>LPG Check</h2>
+    </div>
 
-<div class="section">
-<label>Napełnienie (%)</label>
-<input type="range" id="percent" min="0" max="85" value="50">
-<span id="percentLabel">50%</span>
-</div>
+    <!-- IKONA ZBIORNIKA -->
+    <div class="section center">
+        <img src="zbiornik.png" class="tank">
+    </div>
 
-<div class="section">
-<label>Cena za litr (zł)</label>
-<input id="price" placeholder="np. 1,99">
-</div>
+    <!-- WYBÓR ZBIORNIKA -->
+    <div class="section">
+        <div class="section-title">Wybór zbiornika</div>
+        <div class="row">
+            <select id="tankSize">
+                <option value="2700">2700 L</option>
+                <option value="4850">4850 L</option>
+            </select>
+        </div>
+    </div>
 
-<div class="section">
-<label>Aktualna ilość</label>
-<div class="result" id="current"></div>
-</div>
+    <!-- NAPEŁNIENIE -->
+    <div class="section">
+        <div class="section-title">Obecne napełnienie</div>
 
-<div class="section">
-<label>Do zamówienia</label>
-<div class="result" id="order"></div>
-</div>
+        <div class="row">
+            <div>Napełnienie: <span id="percent">50</span>%</div>
+        </div>
 
-<div class="section">
-<label>Koszt</label>
-<div class="result" id="cost"></div>
-</div>
+        <div class="row">
+            <input type="range" min="0" max="85" value="50" class="slider" id="slider">
+        </div>
+    </div>
+
+    <!-- AKTUALNA ILOŚĆ -->
+    <div class="section">
+        <div class="section-title">Aktualna ilość gazu</div>
+        <div class="row big" id="currentLiters">0 L</div>
+    </div>
+
+    <!-- DO ZAMÓWIENIA -->
+    <div class="section">
+        <div class="section-title">Do zamówienia</div>
+        <div class="row big blue" id="toOrder">0 L</div>
+    </div>
+
+    <!-- CENA -->
+    <div class="section">
+        <div class="section-title">Cena gazu</div>
+        <div class="row">
+            <input type="number" step="0.01" id="price" placeholder="np. 1.99">
+        </div>
+    </div>
+
+    <!-- KOSZT -->
+    <div class="section">
+        <div class="section-title">Koszt tankowania</div>
+        <div class="row big green" id="cost">0 zł</div>
+    </div>
 
 </div>
 
 <script>
-const tank = document.getElementById("tank");
-const percent = document.getElementById("percent");
-const price = document.getElementById("price");
+const slider = document.getElementById("slider");
+const percentLabel = document.getElementById("percent");
+const tankSelect = document.getElementById("tankSize");
+const priceInput = document.getElementById("price");
 
-function calc() {
-    const max = tank.value * 0.85;
-    const p = percent.value;
-    const priceVal = parseFloat(price.value.replace(",", ".")) || 0;
+function calculate() {
+    const percent = parseFloat(slider.value);
+    const tank = parseFloat(tankSelect.value);
+    const price = parseFloat(priceInput.value) || 0;
 
-    const current = max * p / 85;
-    const order = max - current;
-    const cost = order * priceVal;
+    const maxCapacity = tank * 0.85;
+    const current = maxCapacity * percent / 85;
+    const toOrder = maxCapacity - current;
+    const cost = toOrder * price;
 
-    document.getElementById("percentLabel").innerText = p + "%";
-    document.getElementById("current").innerText = Math.round(current) + " L";
-    document.getElementById("order").innerText = Math.round(order) + " L";
+    percentLabel.innerText = percent;
+    document.getElementById("currentLiters").innerText = Math.round(current) + " L";
+    document.getElementById("toOrder").innerText = Math.round(toOrder) + " L";
     document.getElementById("cost").innerText = cost.toFixed(2) + " zł";
 }
 
-tank.onchange = calc;
-percent.oninput = calc;
-price.oninput = calc;
+slider.oninput = calculate;
+tankSelect.onchange = calculate;
+priceInput.oninput = calculate;
 
-calc();
+calculate();
 </script>
 
 </body>
